@@ -112,7 +112,7 @@ func TestConnStr(t *testing.T) {
 					if err != nil {
 						t.Errorf("did not expect an error but got: %v", err)
 					}
-					if result != tt.expected {
+					if *result != tt.expected {
 						t.Errorf("expected: %+v, got: %+v", tt.expected, result)
 					}
 				}

@@ -45,20 +45,20 @@ func (c *ConnStr) setDefaultsIfEmpty() {
 //   - The authToken is the optional authentication token sent to the server on every request.
 //
 // If the connection string is invalid, an error is returned.
-func NewConnStrFromText(connStrText string) (ConnStr, error) {
+func NewConnStrFromText(connStrText string) (*ConnStr, error) {
 	parsedURL, err := url.Parse(connStrText)
 	if err != nil {
-		return ConnStr{}, err
+		return &ConnStr{}, err
 	}
 
 	protocol := parsedURL.Scheme
 	if protocol != "http" && protocol != "https" {
-		return ConnStr{}, errors.New("invalid protocol, must be http or https")
+		return &ConnStr{}, errors.New("invalid protocol, must be http or https")
 	}
 
 	host := parsedURL.Hostname()
 	if host == "" {
-		return ConnStr{}, errors.New("host is required")
+		return &ConnStr{}, errors.New("host is required")
 	}
 
 	port := parsedURL.Port()
@@ -66,7 +66,7 @@ func NewConnStrFromText(connStrText string) (ConnStr, error) {
 		port = "9876"
 	}
 
-	return ConnStr{
+	return &ConnStr{
 		Protocol:  protocol,
 		Host:      host,
 		Port:      port,
