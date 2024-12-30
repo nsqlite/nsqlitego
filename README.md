@@ -91,6 +91,4 @@ Errors are ignored for brevity, but you should always handle them in your code.
 
 ## License
 
-This project is licensed under the Unlicense license.
-
-See [LICENSE](LICENSE) for details.
+This project is licensed under the MIT license. See [LICENSE](LICENSE) for details.
