@@ -1,19 +1,25 @@
 package nsqlitedriver
 
 import (
+	"context"
 	"database/sql/driver"
 	"fmt"
+	"strings"
 
 	"github.com/nsqlite/nsqlitego/nsqlitehttp"
 )
 
-var _ driver.Stmt = (*Stmt)(nil)
+var (
+	_ driver.Stmt                           = (*Stmt)(nil)
+	_ driver.StmtExecContext                = (*Stmt)(nil)
+	_ driver.StmtQueryContext               = (*Stmt)(nil)
+	_ driver.RowsColumnTypeDatabaseTypeName = (*QueryRows)(nil)
+)
 
 // Stmt represents a prepared statement.
 type Stmt struct {
 	client *nsqlitehttp.Client
 	query  string
-	txId   string // Optional transaction ID
 }
 
 // Close releases resources associated with the statement.
@@ -43,13 +49,12 @@ func (r *ExecResult) RowsAffected() (int64, error) {
 	return r.rowsAffected, nil
 }
 
-// Exec executes a query without returning rows (e.g., INSERT, UPDATE, DELETE).
-func (s *Stmt) Exec(args []driver.Value) (driver.Result, error) {
-	params := convertArgs(args)
+// ExecContext executes a query without returning rows (e.g., INSERT, UPDATE, DELETE).
+func (s *Stmt) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+	params := convertNamedValueToAnyArray(args)
 	resp, err := s.client.Query(nsqlitehttp.Query{
 		Query:  s.query,
 		Params: params,
-		TxId:   s.txId,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
@@ -66,9 +71,15 @@ func (s *Stmt) Exec(args []driver.Value) (driver.Result, error) {
 	}, nil
 }
 
+// Exec executes a query without returning rows (e.g., INSERT, UPDATE, DELETE).
+func (s *Stmt) Exec(args []driver.Value) (driver.Result, error) {
+	return s.ExecContext(context.Background(), convertValueToNamedValue(args))
+}
+
 // QueryRows represents a set of query results.
 type QueryRows struct {
 	columns []string
+	types   []string
 	values  [][]any
 	rowIdx  int
 }
@@ -97,13 +108,23 @@ func (r *QueryRows) Next(dest []driver.Value) error {
 	return nil
 }
 
-// Query executes a query that returns rows (e.g., SELECT).
-func (s *Stmt) Query(args []driver.Value) (driver.Rows, error) {
-	params := convertArgs(args)
+// ColumnTypeDatabaseTypeName returns the database type name for the column.
+func (r *QueryRows) ColumnTypeDatabaseTypeName(index int) string {
+	if index < 0 {
+		return ""
+	}
+	if index >= len(r.types) {
+		return ""
+	}
+	return strings.ToUpper(r.types[index])
+}
+
+// QueryContext executes a query that returns rows (e.g., SELECT).
+func (s *Stmt) QueryContext(_ context.Context, args []driver.NamedValue) (driver.Rows, error) {
+	params := convertNamedValueToAnyArray(args)
 	resp, err := s.client.Query(nsqlitehttp.Query{
 		Query:  s.query,
 		Params: params,
-		TxId:   s.txId,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
@@ -116,15 +137,36 @@ func (s *Stmt) Query(args []driver.Value) (driver.Rows, error) {
 	}
 	return &QueryRows{
 		columns: resp.Columns,
+		types:   resp.Types,
 		values:  resp.Values,
 	}, nil
 }
 
-// Helper function to convert driver.Value arguments to []any.
-func convertArgs(args []driver.Value) []any {
+// Query executes a query that returns rows (e.g., SELECT).
+func (s *Stmt) Query(args []driver.Value) (driver.Rows, error) {
+	return s.QueryContext(context.Background(), convertValueToNamedValue(args))
+}
+
+// convertNamedValueToAnyArray converts driver.NamedValue arguments to []any.
+func convertNamedValueToAnyArray(args []driver.NamedValue) []any {
 	converted := make([]any, len(args))
 	for i, arg := range args {
-		converted[i] = arg
+		converted[i] = arg.Value
 	}
 	return converted
+}
+
+// convertValueToNamedValue converts driver.Value arguments to []driver.NamedValue.
+func convertValueToNamedValue(args []driver.Value) []driver.NamedValue {
+	if len(args) == 0 {
+		return nil
+	}
+	namedArgs := make([]driver.NamedValue, len(args))
+	for i, arg := range args {
+		namedArgs[i] = driver.NamedValue{
+			Ordinal: i + 1,
+			Value:   arg,
+		}
+	}
+	return namedArgs
 }

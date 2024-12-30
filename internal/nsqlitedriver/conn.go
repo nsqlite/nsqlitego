@@ -13,6 +13,8 @@ var (
 	_ driver.ConnBeginTx        = (*Conn)(nil)
 	_ driver.ConnPrepareContext = (*Conn)(nil)
 	_ driver.Pinger             = (*Conn)(nil)
+	_ driver.SessionResetter    = (*Conn)(nil)
+	_ driver.Validator          = (*Conn)(nil)
 )
 
 // Conn represents a connection to the NSQLite server.
@@ -67,4 +69,17 @@ func (c *Conn) BeginTx(_ context.Context, opts driver.TxOptions) (driver.Tx, err
 // Ping verifies that the connection is still alive.
 func (c *Conn) Ping(_ context.Context) error {
 	return c.client.Ping()
+}
+
+// ResetSession resets the session state used when the connection was used before and needs
+// to be reused.
+func (c *Conn) ResetSession(_ context.Context) error {
+	// TODO: Rollback transaction if any
+	return nil
+}
+
+// IsValid is called prior to placing the connection into the connection pool. The connection
+// will be discarded if false is returned.
+func (c *Conn) IsValid() bool {
+	return c.client.IsHealthy() == nil
 }

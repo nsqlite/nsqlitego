@@ -5,7 +5,10 @@ import (
 	"database/sql/driver"
 )
 
-var _ driver.Driver = (*Driver)(nil)
+var (
+	_ driver.Driver        = (*Driver)(nil)
+	_ driver.DriverContext = (*Driver)(nil)
+)
 
 // Driver implements database/sql/driver.Driver for NSQLite.
 type Driver struct{}
@@ -17,4 +20,11 @@ func (d *Driver) Open(connectionString string) (driver.Conn, error) {
 
 	conn := NewConnector(opts)
 	return conn.Connect(context.Background())
+}
+
+// OpenConnector creates a new connector using the provided DSN (Data Source Name).
+func (d *Driver) OpenConnector(connectionString string) (driver.Connector, error) {
+	opts := NewConnectorOptions()
+	opts.SetConnectionString(connectionString)
+	return NewConnector(opts), nil
 }
