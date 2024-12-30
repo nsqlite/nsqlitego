@@ -92,9 +92,11 @@ Errors are ignored for brevity, but you should always handle them in your code.
 
 ## Additional Packages
 
-- **[nsqlitedsn/README.md](nsqlitedsn/README.md)** – Provides convenient parsing
+These packages are included in this repository, so no additional installation is required.
+
+- **[nsqlitedsn](nsqlitedsn/README.md)** – Provides convenient parsing
   and manipulation of NSQLite connection strings.
-- **[nsqlitehttp/README.md](nsqlitehttp/README.md)** – An alternative way to
+- **[nsqlitehttp](nsqlitehttp/README.md)** – An alternative way to
   access the **NSQLite database engine** directly over HTTP, offering more
   granular control than the `database/sql` layer.
 
