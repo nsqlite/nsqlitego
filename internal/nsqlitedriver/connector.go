@@ -8,23 +8,29 @@ import (
 	"github.com/nsqlite/nsqlitego/nsqlitehttp"
 )
 
-// ConnectorOptions represents a set of options to configure a NSQLite connector.
+// ConnectorOptions represents a set of options to configure a NSQLite
+// connector.
 type ConnectorOptions struct {
 	connectionString string
 }
 
-// NewConnectorOptions returns a new set of options to configure a NSQLite connector.
+// NewConnectorOptions returns a new set of options to configure a NSQLite
+// connector.
 func NewConnectorOptions() *ConnectorOptions {
 	return &ConnectorOptions{}
 }
 
-// SetConnectionString sets the connection string to use when connecting to the database.
-func (co *ConnectorOptions) SetConnectionString(connectionString string) *ConnectorOptions {
+// SetConnectionString sets the connection string to use when connecting to the
+// database.
+func (co *ConnectorOptions) SetConnectionString(
+	connectionString string,
+) *ConnectorOptions {
 	co.connectionString = connectionString
 	return co
 }
 
-// NewConnector returns a new NSQLite connector compatible with database/sql.OpenDB
+// NewConnector returns a new NSQLite connector compatible with
+// database/sql.OpenDB
 //
 // It accepts a number of options to configure the connector.
 func NewConnector(opts *ConnectorOptions) driver.Connector {
@@ -36,8 +42,8 @@ func NewConnector(opts *ConnectorOptions) driver.Connector {
 
 var _ driver.Connector = (*nsqliteConnector)(nil)
 
-// nsqliteConnector represents a driver in a fixed configuration and can create any number of equivalent
-// Conns for use by multiple goroutines.
+// nsqliteConnector represents a driver in a fixed configuration and can create
+// any number of equivalent Conns for use by multiple goroutines.
 type nsqliteConnector struct {
 	connString string
 }

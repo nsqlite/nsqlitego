@@ -2,6 +2,7 @@ package nsqlitehttp
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -49,7 +50,7 @@ func (c *Client) Ping() error {
 
 	if strings.ToLower(res.Headers.Get("x-server")) != "nsqlite" {
 		return fmt.Errorf(
-			`health check expected to return "NSQLite" in "X-Server" header but got "%s"`,
+			`health check expected to return NSQLite in X-Server header but got "%s"`,
 			res.Headers.Get("x-server"),
 		)
 	}
@@ -57,8 +58,8 @@ func (c *Client) Ping() error {
 	return nil
 }
 
-// IsHealthy checks if the server is alive. Returns an error if the server is not
-// healthy.
+// IsHealthy checks if the server is alive. Returns an error if the server is
+// not healthy.
 func (c *Client) IsHealthy() error {
 	return c.Ping()
 }
@@ -70,11 +71,15 @@ func (c *Client) Version() (string, error) {
 
 	res, err := req.Get()
 	if err != nil {
-		return "", fmt.Errorf("failed to get remote NSQLite server version: %v", err)
+		return "", fmt.Errorf(
+			"failed to get remote NSQLite server version: %v", err,
+		)
 	}
 
 	if res.Status == http.StatusUnauthorized {
-		return "", fmt.Errorf("authentication failed, please check your credentials")
+		return "", errors.New(
+			"authentication failed, please check your credentials",
+		)
 	}
 
 	if res.Status != http.StatusOK {
@@ -97,7 +102,8 @@ const (
 	QueryResponseRead     QueryResponseType = "read"
 )
 
-// QueryResponse represents the response of a query sent to the remote NSQLite server.
+// QueryResponse represents the response of a query sent to the remote NSQLite
+// server.
 type QueryResponse struct {
 	Type QueryResponseType `json:"type"`
 	Time float64           `json:"time"`

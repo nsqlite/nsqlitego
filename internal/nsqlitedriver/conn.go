@@ -22,15 +22,16 @@ var (
 type Conn struct {
 	// client is the HTTP client used to communicate with the NSQLite server.
 	client *nsqlitehttp.Client
-	// txId is the ID of the current transaction, if empty no transaction is active.
+	// txId is the ID of the current transaction, if empty no transaction is
+	// active.
 	//
-	// We can store this here because docs say that the connection is not used concurrently
-	// by multiple goroutines and is assumed to be stateful.
+	// We can store this here because docs say that the connection is not used
+	//concurrently by multiple goroutines and is assumed to be stateful.
 	//
 	// https://pkg.go.dev/database/sql/driver#Conn
 	//
-	// Stmt is where we use txId, and because Stmt is not used concurrently and is bound
-	// to a Conn, we theoretically can store it here.
+	// Stmt is where we use txId, and because Stmt is not used concurrently and
+	//is bound to a Conn, we theoretically can store it here.
 	//
 	// https://pkg.go.dev/database/sql/driver#Stmt
 	txId string
@@ -42,7 +43,9 @@ func (c *Conn) Prepare(query string) (driver.Stmt, error) {
 }
 
 // PrepareContext creates a prepared statement with the given query and context.
-func (c *Conn) PrepareContext(_ context.Context, query string) (driver.Stmt, error) {
+func (c *Conn) PrepareContext(
+	_ context.Context, query string,
+) (driver.Stmt, error) {
 	return &Stmt{
 		conn:  c,
 		query: query,
@@ -63,7 +66,9 @@ func (c *Conn) Begin() (driver.Tx, error) {
 }
 
 // BeginTx starts a new transaction with the provided context.
-func (c *Conn) BeginTx(_ context.Context, opts driver.TxOptions) (driver.Tx, error) {
+func (c *Conn) BeginTx(
+	_ context.Context, opts driver.TxOptions,
+) (driver.Tx, error) {
 	resp, err := c.client.Query(nsqlitehttp.Query{
 		Query: "BEGIN;",
 	})
@@ -139,17 +144,19 @@ func (c *Conn) Ping(_ context.Context) error {
 	return c.client.Ping()
 }
 
-// ResetSession resets the session state used when the connection was used before and needs
-// to be reused.
+// ResetSession resets the session state used when the connection was used
+// before and needs to be reused.
 func (c *Conn) ResetSession(_ context.Context) error {
 	if err := c.RollbackTx(); err != nil {
-		return errors.Join(driver.ErrBadConn, errors.New("error resetting session"), err)
+		return errors.Join(
+			driver.ErrBadConn, errors.New("error resetting session"), err,
+		)
 	}
 	return nil
 }
 
-// IsValid is called prior to placing the connection into the connection pool. The connection
-// will be discarded if false is returned.
+// IsValid is called prior to placing the connection into the connection pool.
+// The connection will be discarded if false is returned.
 func (c *Conn) IsValid() bool {
 	return c.client.IsHealthy() == nil
 }

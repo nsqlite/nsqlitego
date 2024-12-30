@@ -16,11 +16,13 @@ type ConnStr struct {
 	Host string
 	// Port is the port number of the server (default is 9876).
 	Port string
-	// AuthToken is the authentication token sent to the server on every request (optional).
+	// AuthToken is the authentication token sent to the server on every request
+	// (optional).
 	AuthToken string
 }
 
-// setDefaultsIfEmpty sets the default values for the connection string if they are empty.
+// setDefaultsIfEmpty sets the default values for the connection string if they
+// are empty.
 func (c *ConnStr) setDefaultsIfEmpty() {
 	if c.Protocol == "" {
 		c.Protocol = "http"
@@ -37,12 +39,14 @@ func (c *ConnStr) setDefaultsIfEmpty() {
 
 // NewConnStrFromStr creates a new ConnStr from a connection string.
 //
-// The connection string must be in the format "protocol://host:port?authToken=token".
+// The connection string must be in the format
+// "protocol://host:port?authToken=token".
 //
 //   - The protocol must be either "http" or "https".
 //   - The host is the IP address or domain name of the server.
 //   - The port is the port number of the server (default is 9876).
-//   - The authToken is the optional authentication token sent to the server on every request.
+//   - The authToken is the optional authentication token sent to the server on
+//     every request.
 //
 // If the connection string is invalid, an error is returned.
 func NewConnStrFromText(connStrText string) (*ConnStr, error) {
@@ -74,7 +78,8 @@ func NewConnStrFromText(connStrText string) (*ConnStr, error) {
 	}, nil
 }
 
-// String returns the string representation of the connection string without the auth token.
+// String returns the string representation of the connection string without
+// the auth token.
 func (c *ConnStr) String() string {
 	c.setDefaultsIfEmpty()
 
@@ -85,13 +90,15 @@ func (c *ConnStr) String() string {
 	return c.Protocol + "://" + c.Host + ":" + c.Port + "?authToken=****"
 }
 
-// BaseUrlStr returns the full URL of the connection string without the auth token.
+// BaseUrlStr returns the full URL of the connection string without the auth
+// token.
 func (c *ConnStr) BaseUrlStr() string {
 	c.setDefaultsIfEmpty()
 	return c.Protocol + "://" + c.Host + ":" + c.Port
 }
 
-// CreateUrlStr returns a string URL from the connection string and the provided path.
+// CreateUrlStr returns a string URL from the connection string and the
+// provided path.
 //
 // This does not include the auth token in the URL.
 func (c *ConnStr) CreateUrlStr(path string) (string, error) {
@@ -116,7 +123,8 @@ func (c *ConnStr) CreateUrlStr(path string) (string, error) {
 	return joined, nil
 }
 
-// CreateUrl returns an *url.URL from the connection string and the provided path.
+// CreateUrl returns an *url.URL from the connection string and the
+// provided path.
 //
 // This does not include the auth token in the URL.
 func (c *ConnStr) CreateUrl(path string) (*url.URL, error) {

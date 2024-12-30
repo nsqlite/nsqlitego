@@ -25,7 +25,7 @@ type request struct {
 //   - method: GET
 //   - baseUrl: provided by the connection string
 //   - path: /
-//   - header: Content-Type: application/json; Authorization: <token from conn string>
+//   - header: Content-Type: application/json; Authorization: <connstr token>
 func newRequest(connStr *nsqlitedsn.ConnStr) *request {
 	header := http.Header{
 		"Content-Type":  []string{"application/json"},
@@ -61,7 +61,8 @@ func (r *request) SetPath(path string) *request {
 	return r
 }
 
-// SetHeader sets the HTTP header. If the header already exists, it will be overwritten.
+// SetHeader sets the HTTP header. If the header already exists, it will be
+// overwritten.
 func (r *request) SetHeader(key, value string) *request {
 	r.header.Set(key, value)
 	return r
@@ -147,7 +148,9 @@ func (r *request) do() (*Response, error) {
 		return nil, fmt.Errorf("failed reading response body: %w", err)
 	}
 
-	isJson := strings.Contains(httpResp.Header.Get("Content-Type"), "application/json")
+	isJson := strings.Contains(
+		httpResp.Header.Get("Content-Type"), "application/json",
+	)
 	return &Response{
 		IsJson:       isJson,
 		Body:         string(bodyb),

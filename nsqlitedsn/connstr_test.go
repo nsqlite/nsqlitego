@@ -476,13 +476,22 @@ func TestConnStr(t *testing.T) {
 				}
 
 				if tt.initial.Protocol != tt.expected.Protocol {
-					t.Errorf("expected Protocol: %s, got: %s", tt.expected.Protocol, tt.initial.Protocol)
+					t.Errorf(
+						"expected Protocol: %s, got: %s",
+						tt.expected.Protocol, tt.initial.Protocol,
+					)
 				}
 				if tt.initial.Host != tt.expected.Host {
-					t.Errorf("expected Host: %s, got: %s", tt.expected.Host, tt.initial.Host)
+					t.Errorf(
+						"expected Host: %s, got: %s",
+						tt.expected.Host, tt.initial.Host,
+					)
 				}
 				if tt.initial.Port != tt.expected.Port {
-					t.Errorf("expected Port: %s, got: %s", tt.expected.Port, tt.initial.Port)
+					t.Errorf(
+						"expected Port: %s, got: %s",
+						tt.expected.Port, tt.initial.Port,
+					)
 				}
 			})
 		}

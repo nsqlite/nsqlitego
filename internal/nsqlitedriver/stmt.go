@@ -52,8 +52,10 @@ func (r *ExecResult) RowsAffected() (int64, error) {
 	return r.rowsAffected, nil
 }
 
-// ExecContext executes a query without returning rows (e.g., INSERT, UPDATE, DELETE).
-func (s *Stmt) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
+// ExecContext executes a query without returning rows (e.g., INSERT, UPDATE).
+func (s *Stmt) ExecContext(
+	_ context.Context, args []driver.NamedValue,
+) (driver.Result, error) {
 	params := convertNamedValueToAnyArray(args)
 	resp, err := s.conn.client.Query(nsqlitehttp.Query{
 		Query:  s.query,
@@ -128,7 +130,9 @@ func (r *QueryRows) ColumnTypeDatabaseTypeName(index int) string {
 }
 
 // QueryContext executes a query that returns rows (e.g., SELECT).
-func (s *Stmt) QueryContext(_ context.Context, args []driver.NamedValue) (driver.Rows, error) {
+func (s *Stmt) QueryContext(
+	_ context.Context, args []driver.NamedValue,
+) (driver.Rows, error) {
 	params := convertNamedValueToAnyArray(args)
 	resp, err := s.conn.client.Query(nsqlitehttp.Query{
 		Query:  s.query,
@@ -165,7 +169,8 @@ func convertNamedValueToAnyArray(args []driver.NamedValue) []any {
 	return converted
 }
 
-// convertValueToNamedValue converts driver.Value arguments to []driver.NamedValue.
+// convertValueToNamedValue converts driver.Value arguments to
+// []driver.NamedValue.
 func convertValueToNamedValue(args []driver.Value) []driver.NamedValue {
 	if len(args) == 0 {
 		return nil
