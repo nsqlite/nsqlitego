@@ -1,2 +1,2 @@
-// Package nsclient provides an HTTP client for the NSQLite API.
+// Package nsqlitehttp provides an HTTP client for the NSQLite API.
 package nsqlitehttp

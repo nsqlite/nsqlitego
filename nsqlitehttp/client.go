@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nsqlite/nsqlitego/connstr"
+	"github.com/nsqlite/nsqlitego/nsqlitedsn"
 )
 
 // Client is an HTTP client for the NSQLite server.
@@ -16,7 +16,7 @@ type Client struct {
 
 // NewClient creates a new NSQLite client.
 func NewClient(connStr string) (*Client, error) {
-	cStr, err := connstr.NewConnStrFromText(connStr)
+	cStr, err := nsqlitedsn.NewConnStrFromText(connStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid connection string: %v", err)
 	}

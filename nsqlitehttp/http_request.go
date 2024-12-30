@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nsqlite/nsqlitego/connstr"
+	"github.com/nsqlite/nsqlitego/nsqlitedsn"
 )
 
 // request represents an HTTP request.
 type request struct {
-	connStr *connstr.ConnStr
+	connStr *nsqlitedsn.ConnStr
 	method  string
 	path    string
 	header  http.Header
@@ -26,7 +26,7 @@ type request struct {
 //   - baseUrl: provided by the connection string
 //   - path: /
 //   - header: Content-Type: application/json; Authorization: <token from conn string>
-func newRequest(connStr *connstr.ConnStr) *request {
+func newRequest(connStr *nsqlitedsn.ConnStr) *request {
 	header := http.Header{
 		"Content-Type":  []string{"application/json"},
 		"Authorization": []string{connStr.AuthToken},

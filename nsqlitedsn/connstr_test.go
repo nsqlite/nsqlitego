@@ -1,4 +1,4 @@
-package connstr
+package nsqlitedsn
 
 import (
 	"testing"
