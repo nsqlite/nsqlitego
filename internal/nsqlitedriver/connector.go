@@ -46,7 +46,7 @@ type nsqliteConnector struct {
 func (c *nsqliteConnector) Connect(_ context.Context) (driver.Conn, error) {
 	client, err := nsqlitehttp.NewClient(c.connString)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create NSQLite client: %w", err)
+		return nil, fmt.Errorf("error creating NSQLite client: %w", err)
 	}
 	return &Conn{client: client}, nil
 }

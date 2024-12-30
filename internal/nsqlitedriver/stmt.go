@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/nsqlite/nsqlitego/nsqlitehttp"
@@ -99,14 +100,18 @@ func (r *QueryRows) Close() error {
 
 // Next prepares the next row for reading.
 func (r *QueryRows) Next(dest []driver.Value) error {
+	if r.rowIdx < 0 {
+		return fmt.Errorf("invalid row index: %d", r.rowIdx)
+	}
 	if r.rowIdx >= len(r.values) {
-		return driver.ErrSkip
+		return io.EOF
 	}
 
 	row := r.values[r.rowIdx]
 	for i, val := range row {
 		dest[i] = val
 	}
+
 	r.rowIdx++
 	return nil
 }
