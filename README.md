@@ -7,6 +7,21 @@
   </p>
 </p>
 
+<p align="center">
+  <a href="https://goreportcard.com/report/nsqlite/nsqlitego">
+    <img src="https://goreportcard.com/badge/nsqlite/nsqlitego" alt="Go Report Card"/>
+  </a>
+  <a href="https://github.com/nsqlite/nsqlitego/releases/latest">
+    <img src="https://img.shields.io/github/release/nsqlite/nsqlitego.svg" alt="Release Version"/>
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/nsqlite/nsqlitego.svg" alt="License"/>
+  </a>
+  <a href="https://github.com/nsqlite/nsqlitego">
+    <img src="https://img.shields.io/github/stars/nsqlite/nsqlitego?style=flat&label=github+stars"/>
+  </a>
+</p>
+
 # nsqlitego
 
 NSQLite Go Driver, a driver for the
