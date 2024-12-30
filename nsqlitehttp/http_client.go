@@ -1,4 +1,4 @@
-package nsclient
+package nsqlitehttp
 
 import (
 	"net/http"
