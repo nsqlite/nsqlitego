@@ -11,15 +11,17 @@ var _ driver.Tx = (*Tx)(nil)
 
 // Tx represents a transaction.
 type Tx struct {
-	client *nsqlitehttp.Client
-	txId   string
+	// conn is the connection associated with the transaction.
+	conn *Conn
 }
 
 // Commit commits the transaction.
 func (t *Tx) Commit() error {
-	resp, err := t.client.Query(nsqlitehttp.Query{
+	defer t.resetConnectionTxId()
+
+	resp, err := t.conn.client.Query(nsqlitehttp.Query{
 		Query: "COMMIT",
-		TxId:  t.txId,
+		TxId:  t.conn.txId,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
@@ -35,9 +37,11 @@ func (t *Tx) Commit() error {
 
 // Rollback rolls back the transaction.
 func (t *Tx) Rollback() error {
-	resp, err := t.client.Query(nsqlitehttp.Query{
+	defer t.resetConnectionTxId()
+
+	resp, err := t.conn.client.Query(nsqlitehttp.Query{
 		Query: "ROLLBACK",
-		TxId:  t.txId,
+		TxId:  t.conn.txId,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to rollback transaction: %w", err)
@@ -49,4 +53,9 @@ func (t *Tx) Rollback() error {
 		return fmt.Errorf("unexpected response type: %s", resp.Type)
 	}
 	return nil
+}
+
+// resetConnectionTxId resets the transaction ID for the connection.
+func (t *Tx) resetConnectionTxId() {
+	t.conn.txId = ""
 }

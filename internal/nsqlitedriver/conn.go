@@ -19,7 +19,10 @@ var (
 
 // Conn represents a connection to the NSQLite server.
 type Conn struct {
+	// client is the HTTP client used to communicate with the NSQLite server.
 	client *nsqlitehttp.Client
+	// txId is the ID of the current transaction, if empty no transaction is active.
+	txId string
 }
 
 // Prepare creates a prepared statement with the given query.
@@ -30,8 +33,8 @@ func (c *Conn) Prepare(query string) (driver.Stmt, error) {
 // PrepareContext creates a prepared statement with the given query and context.
 func (c *Conn) PrepareContext(_ context.Context, query string) (driver.Stmt, error) {
 	return &Stmt{
-		client: c.client,
-		query:  query,
+		conn:  c,
+		query: query,
 	}, nil
 }
 
@@ -60,9 +63,10 @@ func (c *Conn) BeginTx(_ context.Context, opts driver.TxOptions) (driver.Tx, err
 	if resp.Type != nsqlitehttp.QueryResponseBegin {
 		return nil, fmt.Errorf("unexpected response type: %s", resp.Type)
 	}
+
+	c.txId = resp.TxId
 	return &Tx{
-		client: c.client,
-		txId:   resp.TxId,
+		conn: c,
 	}, nil
 }
 

@@ -18,8 +18,10 @@ var (
 
 // Stmt represents a prepared statement.
 type Stmt struct {
-	client *nsqlitehttp.Client
-	query  string
+	// conn is the connection associated with the statement.
+	conn *Conn
+	// query is the query string to be executed with NSQLite.
+	query string
 }
 
 // Close releases resources associated with the statement.
@@ -52,9 +54,10 @@ func (r *ExecResult) RowsAffected() (int64, error) {
 // ExecContext executes a query without returning rows (e.g., INSERT, UPDATE, DELETE).
 func (s *Stmt) ExecContext(_ context.Context, args []driver.NamedValue) (driver.Result, error) {
 	params := convertNamedValueToAnyArray(args)
-	resp, err := s.client.Query(nsqlitehttp.Query{
+	resp, err := s.conn.client.Query(nsqlitehttp.Query{
 		Query:  s.query,
 		Params: params,
+		TxId:   s.conn.txId,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
@@ -122,9 +125,10 @@ func (r *QueryRows) ColumnTypeDatabaseTypeName(index int) string {
 // QueryContext executes a query that returns rows (e.g., SELECT).
 func (s *Stmt) QueryContext(_ context.Context, args []driver.NamedValue) (driver.Rows, error) {
 	params := convertNamedValueToAnyArray(args)
-	resp, err := s.client.Query(nsqlitehttp.Query{
+	resp, err := s.conn.client.Query(nsqlitehttp.Query{
 		Query:  s.query,
 		Params: params,
+		TxId:   s.conn.txId,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
