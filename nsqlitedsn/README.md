@@ -8,6 +8,7 @@ connection strings.
 - Parse URLs of the form `http://host:port?authToken=xyz` (or `https`).
 - Cleanly separate protocol, host, port, and optional auth token.
 - Provide helper methods for constructing and joining paths.
+- Zero dependencies outside the standard library.
 
 ## Installation
 
