@@ -8,6 +8,9 @@
 </p>
 
 <p align="center">
+  <a href="https://pkg.go.dev/github.com/nsqlite/nsqlitego">
+    <img src="https://pkg.go.dev/badge/github.com/nsqlite/nsqlitego" alt="Go Reference"/>
+  </a>
   <a href="https://goreportcard.com/report/nsqlite/nsqlitego">
     <img src="https://goreportcard.com/badge/nsqlite/nsqlitego" alt="Go Report Card"/>
   </a>
