@@ -68,9 +68,6 @@ func (s *Stmt) ExecContext(
 	if resp.Type == nsqlitehttp.QueryResponseError {
 		return nil, fmt.Errorf("failed to execute query: %s", resp.Error)
 	}
-	if resp.Type != nsqlitehttp.QueryResponseWrite {
-		return nil, fmt.Errorf("unexpected response type: %s", resp.Type)
-	}
 	return &ExecResult{
 		lastInsertId: resp.LastInsertID,
 		rowsAffected: resp.RowsAffected,
