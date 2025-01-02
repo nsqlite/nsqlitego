@@ -150,7 +150,9 @@ func (c *Client) Query(q Query) (QueryResponse, error) {
 		Results []QueryResponse `json:"results"`
 	}{}
 
-	if err := json.Unmarshal([]byte(httpRes.Body), &completeRes); err != nil {
+	decoder := json.NewDecoder(strings.NewReader(httpRes.Body))
+	decoder.UseNumber()
+	if err := decoder.Decode(&completeRes); err != nil {
 		return res, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
