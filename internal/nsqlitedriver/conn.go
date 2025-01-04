@@ -43,9 +43,7 @@ func (c *Conn) Prepare(query string) (driver.Stmt, error) {
 }
 
 // PrepareContext creates a prepared statement with the given query and context.
-func (c *Conn) PrepareContext(
-	_ context.Context, query string,
-) (driver.Stmt, error) {
+func (c *Conn) PrepareContext(_ context.Context, query string) (driver.Stmt, error) {
 	return &Stmt{
 		conn:  c,
 		query: query,
@@ -54,7 +52,7 @@ func (c *Conn) PrepareContext(
 
 // Close closes the connection, releasing any open resources.
 func (c *Conn) Close() error {
-	if err := c.RollbackTx(); err != nil {
+	if err := c.RollbackTx(context.Background()); err != nil {
 		return fmt.Errorf("failed closing connection: %w", err)
 	}
 	return nil
@@ -66,10 +64,8 @@ func (c *Conn) Begin() (driver.Tx, error) {
 }
 
 // BeginTx starts a new transaction with the provided context.
-func (c *Conn) BeginTx(
-	_ context.Context, opts driver.TxOptions,
-) (driver.Tx, error) {
-	resp, err := c.client.Query(nsqlitehttp.Query{
+func (c *Conn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
+	resp, err := c.client.Query(ctx, nsqlitehttp.Query{
 		Query: "BEGIN;",
 	})
 	if err != nil {
@@ -89,13 +85,13 @@ func (c *Conn) BeginTx(
 }
 
 // CommitTx commits the transaction if any, otherwise does nothing.
-func (c *Conn) CommitTx() error {
+func (c *Conn) CommitTx(ctx context.Context) error {
 	defer c.setTxId("")
 	if c.txId == "" {
 		return nil
 	}
 
-	resp, err := c.client.Query(nsqlitehttp.Query{
+	resp, err := c.client.Query(ctx, nsqlitehttp.Query{
 		Query: "COMMIT",
 		TxId:  c.txId,
 	})
@@ -112,13 +108,13 @@ func (c *Conn) CommitTx() error {
 }
 
 // RollbackTx rolls back the transaction if any, otherwise does nothing.
-func (c *Conn) RollbackTx() error {
+func (c *Conn) RollbackTx(ctx context.Context) error {
 	defer c.setTxId("")
 	if c.txId == "" {
 		return nil
 	}
 
-	resp, err := c.client.Query(nsqlitehttp.Query{
+	resp, err := c.client.Query(ctx, nsqlitehttp.Query{
 		Query: "ROLLBACK",
 		TxId:  c.txId,
 	})
@@ -140,14 +136,14 @@ func (c *Conn) setTxId(txId string) {
 }
 
 // Ping verifies that the connection is still alive.
-func (c *Conn) Ping(_ context.Context) error {
-	return c.client.Ping()
+func (c *Conn) Ping(ctx context.Context) error {
+	return c.client.Ping(ctx)
 }
 
 // ResetSession resets the session state used when the connection was used
 // before and needs to be reused.
-func (c *Conn) ResetSession(_ context.Context) error {
-	if err := c.RollbackTx(); err != nil {
+func (c *Conn) ResetSession(ctx context.Context) error {
+	if err := c.RollbackTx(ctx); err != nil {
 		return errors.Join(
 			driver.ErrBadConn, errors.New("error resetting session"), err,
 		)
@@ -158,5 +154,5 @@ func (c *Conn) ResetSession(_ context.Context) error {
 // IsValid is called prior to placing the connection into the connection pool.
 // The connection will be discarded if false is returned.
 func (c *Conn) IsValid() bool {
-	return c.client.IsHealthy() == nil
+	return c.client.IsHealthy(context.Background()) == nil
 }

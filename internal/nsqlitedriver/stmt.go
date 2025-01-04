@@ -53,11 +53,9 @@ func (r *ExecResult) RowsAffected() (int64, error) {
 }
 
 // ExecContext executes a query without returning rows (e.g., INSERT, UPDATE).
-func (s *Stmt) ExecContext(
-	_ context.Context, args []driver.NamedValue,
-) (driver.Result, error) {
+func (s *Stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
 	params := convertNamedValueToAnyArray(args)
-	resp, err := s.conn.client.Query(nsqlitehttp.Query{
+	resp, err := s.conn.client.Query(ctx, nsqlitehttp.Query{
 		Query:  s.query,
 		Params: params,
 		TxId:   s.conn.txId,
@@ -127,11 +125,9 @@ func (r *QueryRows) ColumnTypeDatabaseTypeName(index int) string {
 }
 
 // QueryContext executes a query that returns rows (e.g., SELECT).
-func (s *Stmt) QueryContext(
-	_ context.Context, args []driver.NamedValue,
-) (driver.Rows, error) {
+func (s *Stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
 	params := convertNamedValueToAnyArray(args)
-	resp, err := s.conn.client.Query(nsqlitehttp.Query{
+	resp, err := s.conn.client.Query(ctx, nsqlitehttp.Query{
 		Query:  s.query,
 		Params: params,
 		TxId:   s.conn.txId,

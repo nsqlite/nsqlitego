@@ -1,9 +1,11 @@
 package nsqlitehttp
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -12,46 +14,80 @@ import (
 
 // Client is an HTTP client for the NSQLite server.
 type Client struct {
-	httpc *httpClient
+	connStr *nsqlitedsn.ConnStr
+	httpc   *http.Client
 }
 
 // NewClient creates a new NSQLite client.
 func NewClient(connStr string) (*Client, error) {
 	cStr, err := nsqlitedsn.NewConnStrFromText(connStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid connection string: %v", err)
+		return nil, fmt.Errorf("NewClient: invalid connection string: %v", err)
 	}
 
-	httpc := newHttpClient(cStr)
 	return &Client{
-		httpc: httpc,
+		connStr: cStr,
+		httpc:   http.DefaultClient,
 	}, nil
+}
+
+// newRequest creates a new HTTP request with the NSQLite URL and authentication
+func (c *Client) newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
+	url, err := c.connStr.CreateUrlStr(path)
+	if err != nil {
+		return nil, fmt.Errorf("newRequest: failed to create URL: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return nil, fmt.Errorf("newRequest: failed to create request: %w", err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	if c.connStr.AuthToken != "" {
+		request.Header.Set("Authorization", c.connStr.AuthToken)
+	}
+
+	return request, nil
 }
 
 // Ping sends a request to the server to check if it is alive. Returns an error
 // if the server is not alive.
-func (c *Client) Ping() error {
-	req := c.httpc.NewRequest()
-	req.SetPath("/health")
-
-	res, err := req.Get()
+func (c *Client) Ping(ctx context.Context) error {
+	request, err := c.newRequest(ctx, http.MethodGet, "/health", nil)
 	if err != nil {
-		return fmt.Errorf("request failed: %v", err)
+		return fmt.Errorf("Ping: failed to create request: %w", err)
 	}
 
-	if strings.ToLower(res.Body) != "ok" {
-		if len(res.Body) > 100 {
-			res.Body = res.Body[:100] + "..."
+	response, err := c.httpc.Do(request)
+	if err != nil {
+		return fmt.Errorf("Ping: failed to send request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("Ping: unwanted response status %s", response.Status)
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return fmt.Errorf("Ping: failed to read response body: %w", err)
+	}
+	bodyStr := string(body)
+
+	if strings.ToLower(bodyStr) != "ok" {
+		if len(bodyStr) > 100 {
+			bodyStr = bodyStr[:100] + "..."
 		}
 		return fmt.Errorf(
-			`health check expected to return "OK" but got "%s"`, res.Body,
+			`Ping: health check expected to return "OK" but got "%s"`, bodyStr,
 		)
 	}
 
-	if strings.ToLower(res.Headers.Get("x-server")) != "nsqlite" {
+	if strings.ToLower(response.Header.Get("X-Server")) != "nsqlite" {
 		return fmt.Errorf(
-			`health check expected to return NSQLite in X-Server header but got "%s"`,
-			res.Headers.Get("x-server"),
+			`Ping: health check expected to return NSQLite in X-Server header but got "%s"`,
+			response.Header.Get("X-Server"),
 		)
 	}
 
@@ -60,33 +96,37 @@ func (c *Client) Ping() error {
 
 // IsHealthy checks if the server is alive. Returns an error if the server is
 // not healthy.
-func (c *Client) IsHealthy() error {
-	return c.Ping()
+func (c *Client) IsHealthy(ctx context.Context) error {
+	return c.Ping(ctx)
 }
 
 // Version returns the version of the NSQLite server.
-func (c *Client) Version() (string, error) {
-	req := c.httpc.NewRequest()
-	req.SetPath("/version")
-
-	res, err := req.Get()
+func (c *Client) Version(ctx context.Context) (string, error) {
+	request, err := c.newRequest(ctx, http.MethodGet, "/version", nil)
 	if err != nil {
-		return "", fmt.Errorf(
-			"failed to get remote NSQLite server version: %v", err,
-		)
+		return "", fmt.Errorf("Version: failed to create request: %w", err)
 	}
 
-	if res.Status == http.StatusUnauthorized {
-		return "", errors.New(
-			"authentication failed, please check your credentials",
-		)
+	response, err := c.httpc.Do(request)
+	if err != nil {
+		return "", fmt.Errorf("Version: failed to send request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusUnauthorized {
+		return "", fmt.Errorf("Version: authentication failed, please check your credentials")
 	}
 
-	if res.Status != http.StatusOK {
-		return "", fmt.Errorf("unexpected status code: %d", res.Status)
+	if response.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("Version: unwanted response status: %s", response.Status)
 	}
 
-	return res.Body, nil
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", fmt.Errorf("Version: failed to read response body: %w", err)
+	}
+
+	return string(body), nil
 }
 
 // QueryResponseType represents the type of a query response.
@@ -135,30 +175,41 @@ type Query struct {
 }
 
 // Query sends a query to the remote server and returns the response.
-func (c *Client) Query(q Query) (QueryResponse, error) {
-	req := c.httpc.NewRequest()
-	req.SetPath("/query")
-	req.SetHeader("Content-Type", "application/json")
-
-	httpRes, err := req.Post(q)
+func (c *Client) Query(ctx context.Context, q Query) (QueryResponse, error) {
+	requestBody, err := json.Marshal(q)
 	if err != nil {
-		return QueryResponse{}, fmt.Errorf("failed to send query: %v", err)
+		return QueryResponse{}, fmt.Errorf("Query: failed to marshal request body: %w", err)
 	}
 
-	res := QueryResponse{}
-	completeRes := struct {
+	request, err := c.newRequest(ctx, http.MethodPost, "/query", bytes.NewReader(requestBody))
+	if err != nil {
+		return QueryResponse{}, fmt.Errorf("Query: failed to create request: %w", err)
+	}
+
+	response, err := c.httpc.Do(request)
+	if err != nil {
+		return QueryResponse{}, fmt.Errorf("Query: failed to send request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusUnauthorized {
+		return QueryResponse{}, fmt.Errorf("Query: authentication failed, please check your credentials")
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return QueryResponse{}, fmt.Errorf("Query: unwanted response status: %s", response.Status)
+	}
+
+	result := struct {
 		Results []QueryResponse `json:"results"`
 	}{}
-
-	decoder := json.NewDecoder(strings.NewReader(httpRes.Body))
-	decoder.UseNumber()
-	if err := decoder.Decode(&completeRes); err != nil {
-		return res, fmt.Errorf("failed to unmarshal response: %w", err)
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return QueryResponse{}, fmt.Errorf("Query: failed to decode response: %w", err)
 	}
 
-	if len(completeRes.Results) == 0 {
-		return res, fmt.Errorf("empty response")
+	if len(result.Results) == 0 {
+		return QueryResponse{}, fmt.Errorf("Query: empty response")
 	}
 
-	return completeRes.Results[0], nil
+	return result.Results[0], nil
 }

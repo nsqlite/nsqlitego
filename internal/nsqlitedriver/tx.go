@@ -1,6 +1,7 @@
 package nsqlitedriver
 
 import (
+	"context"
 	"database/sql/driver"
 )
 
@@ -14,10 +15,10 @@ type Tx struct {
 
 // Commit commits the transaction.
 func (t *Tx) Commit() error {
-	return t.conn.CommitTx()
+	return t.conn.CommitTx(context.Background())
 }
 
 // Rollback rolls back the transaction.
 func (t *Tx) Rollback() error {
-	return t.conn.RollbackTx()
+	return t.conn.RollbackTx(context.Background())
 }
