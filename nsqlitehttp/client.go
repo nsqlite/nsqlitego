@@ -203,7 +203,10 @@ func (c *Client) Query(ctx context.Context, q Query) (QueryResponse, error) {
 	result := struct {
 		Results []QueryResponse `json:"results"`
 	}{}
-	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+
+	decoder := json.NewDecoder(response.Body)
+	decoder.UseNumber()
+	if err := decoder.Decode(&result); err != nil {
 		return QueryResponse{}, fmt.Errorf("Query: failed to decode response: %w", err)
 	}
 
