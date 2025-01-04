@@ -23,9 +23,7 @@ func (d *Driver) Open(connectionString string) (driver.Conn, error) {
 }
 
 // OpenConnector creates a new connector using the provided connection string.
-func (d *Driver) OpenConnector(
-	connectionString string,
-) (driver.Connector, error) {
+func (d *Driver) OpenConnector(connectionString string) (driver.Connector, error) {
 	opts := NewConnectorOptions()
 	opts.SetConnectionString(connectionString)
 	return NewConnector(opts), nil

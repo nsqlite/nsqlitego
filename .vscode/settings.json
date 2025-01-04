@@ -4,9 +4,6 @@
   /////
   "editor.formatOnSave": true,
   "editor.foldingStrategy": "indentation",
-  "editor.rulers": [
-    80
-  ],
   "files.eol": "\n",
   /////
   // Language specific settings
@@ -20,12 +17,8 @@
   "[markdown]": {
     "editor.defaultFormatter": "vscode.markdown-language-features"
   },
-  // Go & Golangci-lint
+  // Golang settings
   "[go]": {
     "editor.defaultFormatter": "golang.go"
   },
-  "go.lintTool": "golangci-lint",
-  "go.lintFlags": [
-    "--fast"
-  ]
 }
