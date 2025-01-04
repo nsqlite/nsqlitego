@@ -42,7 +42,7 @@ if err != nil {
 ### Sending Queries
 
 ```go
-resp, err := client.Query(nsqlitehttp.Query{
+resp, err := client.Query(context.TODO(), nsqlitehttp.Query{
   Query:  "SELECT id, name FROM users WHERE id > ?",
   Params: []any{100},
   // TxId can be optionally set if you are managing transactions at this level
@@ -60,7 +60,7 @@ if resp.Type == nsqlitehttp.QueryResponseRead {
 ### Ping / Health Check
 
 ```go
-if err := client.Ping(); err != nil {
+if err := client.Ping(context.TODO()); err != nil {
   fmt.Println("Server is not healthy:", err)
 } else {
   fmt.Println("Server is up and running.")
