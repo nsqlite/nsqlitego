@@ -22,7 +22,7 @@ type Client struct {
 func NewClient(connStr string) (*Client, error) {
 	cStr, err := nsqlitedsn.NewConnStrFromText(connStr)
 	if err != nil {
-		return nil, fmt.Errorf("NewClient: invalid connection string: %v", err)
+		return nil, fmt.Errorf("invalid connection string: %v", err)
 	}
 
 	return &Client{
@@ -35,12 +35,12 @@ func NewClient(connStr string) (*Client, error) {
 func (c *Client) newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
 	url, err := c.connStr.CreateUrlStr(path)
 	if err != nil {
-		return nil, fmt.Errorf("newRequest: failed to create URL: %w", err)
+		return nil, fmt.Errorf("failed to create URL: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
-		return nil, fmt.Errorf("newRequest: failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	request.Header.Set("Content-Type", "application/json")
 
@@ -56,22 +56,22 @@ func (c *Client) newRequest(ctx context.Context, method string, path string, bod
 func (c *Client) Ping(ctx context.Context) error {
 	request, err := c.newRequest(ctx, http.MethodGet, "/health", nil)
 	if err != nil {
-		return fmt.Errorf("Ping: failed to create request: %w", err)
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	response, err := c.httpc.Do(request)
 	if err != nil {
-		return fmt.Errorf("Ping: failed to send request: %w", err)
+		return fmt.Errorf("failed to send request: %w", err)
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("Ping: unwanted response status %s", response.Status)
+		return fmt.Errorf("unwanted response status %s", response.Status)
 	}
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return fmt.Errorf("Ping: failed to read response body: %w", err)
+		return fmt.Errorf("failed to read response body: %w", err)
 	}
 	bodyStr := string(body)
 
@@ -80,13 +80,13 @@ func (c *Client) Ping(ctx context.Context) error {
 			bodyStr = bodyStr[:100] + "..."
 		}
 		return fmt.Errorf(
-			`Ping: health check expected to return "OK" but got "%s"`, bodyStr,
+			`health check expected to return "OK" but got "%s"`, bodyStr,
 		)
 	}
 
 	if strings.ToLower(response.Header.Get("X-Server")) != "nsqlite" {
 		return fmt.Errorf(
-			`Ping: health check expected to return NSQLite in X-Server header but got "%s"`,
+			`health check expected to return NSQLite in X-Server header but got "%s"`,
 			response.Header.Get("X-Server"),
 		)
 	}
@@ -104,26 +104,26 @@ func (c *Client) IsHealthy(ctx context.Context) error {
 func (c *Client) Version(ctx context.Context) (string, error) {
 	request, err := c.newRequest(ctx, http.MethodGet, "/version", nil)
 	if err != nil {
-		return "", fmt.Errorf("Version: failed to create request: %w", err)
+		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
 	response, err := c.httpc.Do(request)
 	if err != nil {
-		return "", fmt.Errorf("Version: failed to send request: %w", err)
+		return "", fmt.Errorf("failed to send request: %w", err)
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusUnauthorized {
-		return "", fmt.Errorf("Version: authentication failed, please check your credentials")
+		return "", fmt.Errorf("authentication failed, please check your credentials")
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Version: unwanted response status: %s", response.Status)
+		return "", fmt.Errorf("unwanted response status: %s", response.Status)
 	}
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return "", fmt.Errorf("Version: failed to read response body: %w", err)
+		return "", fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	return string(body), nil
@@ -178,26 +178,26 @@ type Query struct {
 func (c *Client) Query(ctx context.Context, q Query) (QueryResponse, error) {
 	requestBody, err := json.Marshal(q)
 	if err != nil {
-		return QueryResponse{}, fmt.Errorf("Query: failed to marshal request body: %w", err)
+		return QueryResponse{}, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
 	request, err := c.newRequest(ctx, http.MethodPost, "/query", bytes.NewReader(requestBody))
 	if err != nil {
-		return QueryResponse{}, fmt.Errorf("Query: failed to create request: %w", err)
+		return QueryResponse{}, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	response, err := c.httpc.Do(request)
 	if err != nil {
-		return QueryResponse{}, fmt.Errorf("Query: failed to send request: %w", err)
+		return QueryResponse{}, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusUnauthorized {
-		return QueryResponse{}, fmt.Errorf("Query: authentication failed, please check your credentials")
+		return QueryResponse{}, fmt.Errorf("authentication failed, please check your credentials")
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return QueryResponse{}, fmt.Errorf("Query: unwanted response status: %s", response.Status)
+		return QueryResponse{}, fmt.Errorf("unwanted response status: %s", response.Status)
 	}
 
 	result := struct {
@@ -207,11 +207,11 @@ func (c *Client) Query(ctx context.Context, q Query) (QueryResponse, error) {
 	decoder := json.NewDecoder(response.Body)
 	decoder.UseNumber()
 	if err := decoder.Decode(&result); err != nil {
-		return QueryResponse{}, fmt.Errorf("Query: failed to decode response: %w", err)
+		return QueryResponse{}, fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	if len(result.Results) == 0 {
-		return QueryResponse{}, fmt.Errorf("Query: empty response")
+		return QueryResponse{}, fmt.Errorf("empty response")
 	}
 
 	return result.Results[0], nil
