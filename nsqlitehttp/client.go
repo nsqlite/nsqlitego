@@ -216,3 +216,62 @@ func (c *Client) Query(ctx context.Context, q Query) (QueryResponse, error) {
 
 	return result.Results[0], nil
 }
+
+// Stats represents the database stats returned by the server.
+type Stats struct {
+	StartedAt          string      `json:"startedAt"`
+	Uptime             string      `json:"uptime"`
+	QueuedWrites       int64       `json:"queuedWrites"`
+	QueuedTransactions int64       `json:"queuedTransactions"`
+	QueuedHTTPRequests int64       `json:"queuedHttpRequests"`
+	Totals             StatsTotals `json:"totals"`
+	Stats              []StatsStat `json:"stats"`
+}
+
+type StatsTotals struct {
+	Reads        int64 `json:"reads"`
+	Writes       int64 `json:"writes"`
+	Begins       int64 `json:"begins"`
+	Commits      int64 `json:"commits"`
+	Rollbacks    int64 `json:"rollbacks"`
+	HTTPRequests int64 `json:"httpRequests"`
+}
+
+type StatsStat struct {
+	Minute       string `json:"minute"`
+	Reads        int64  `json:"reads"`
+	Writes       int64  `json:"writes"`
+	Begins       int64  `json:"begins"`
+	Commits      int64  `json:"commits"`
+	Rollbacks    int64  `json:"rollbacks"`
+	HTTPRequests int64  `json:"httpRequests"`
+}
+
+// GetStats returns the database stats from the server.
+func (c *Client) GetStats(ctx context.Context) (Stats, error) {
+	request, err := c.newRequest(ctx, http.MethodGet, "/stats", nil)
+	if err != nil {
+		return Stats{}, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	response, err := c.httpc.Do(request)
+	if err != nil {
+		return Stats{}, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusUnauthorized {
+		return Stats{}, fmt.Errorf("authentication failed, please check your credentials")
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return Stats{}, fmt.Errorf("unwanted response status: %s", response.Status)
+	}
+
+	result := Stats{}
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return Stats{}, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return result, nil
+}
