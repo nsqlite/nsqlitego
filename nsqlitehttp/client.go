@@ -51,9 +51,9 @@ func (c *Client) newRequest(ctx context.Context, method string, path string, bod
 	return request, nil
 }
 
-// Ping sends a request to the server to check if it is alive. Returns an error
+// SendPing sends a request to the server to check if it is alive. Returns an error
 // if the server is not alive.
-func (c *Client) Ping(ctx context.Context) error {
+func (c *Client) SendPing(ctx context.Context) error {
 	request, err := c.newRequest(ctx, http.MethodGet, "/health", nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
@@ -97,11 +97,11 @@ func (c *Client) Ping(ctx context.Context) error {
 // IsHealthy checks if the server is alive. Returns an error if the server is
 // not healthy.
 func (c *Client) IsHealthy(ctx context.Context) error {
-	return c.Ping(ctx)
+	return c.SendPing(ctx)
 }
 
-// Version returns the version of the NSQLite server.
-func (c *Client) Version(ctx context.Context) (string, error) {
+// GetVersion returns the version of the NSQLite server.
+func (c *Client) GetVersion(ctx context.Context) (string, error) {
 	request, err := c.newRequest(ctx, http.MethodGet, "/version", nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
@@ -174,30 +174,30 @@ type Query struct {
 	TxId string `json:"txId,omitempty"`
 }
 
-// Query sends a query to the remote server and returns the response.
-func (c *Client) Query(ctx context.Context, q Query) (QueryResponse, error) {
-	requestBody, err := json.Marshal(q)
+// SendQueries sends one or more queries to the remote server and returns the responses in same order.
+func (c *Client) SendQueries(ctx context.Context, queries []Query) ([]QueryResponse, error) {
+	requestBody, err := json.Marshal(queries)
 	if err != nil {
-		return QueryResponse{}, fmt.Errorf("failed to marshal request body: %w", err)
+		return nil, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
 	request, err := c.newRequest(ctx, http.MethodPost, "/query", bytes.NewReader(requestBody))
 	if err != nil {
-		return QueryResponse{}, fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	response, err := c.httpc.Do(request)
 	if err != nil {
-		return QueryResponse{}, fmt.Errorf("failed to send request: %w", err)
+		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusUnauthorized {
-		return QueryResponse{}, fmt.Errorf("authentication failed, please check your credentials")
+		return nil, fmt.Errorf("authentication failed, please check your credentials")
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return QueryResponse{}, fmt.Errorf("unwanted response status: %s", response.Status)
+		return nil, fmt.Errorf("unwanted response status: %s", response.Status)
 	}
 
 	result := struct {
@@ -207,14 +207,24 @@ func (c *Client) Query(ctx context.Context, q Query) (QueryResponse, error) {
 	decoder := json.NewDecoder(response.Body)
 	decoder.UseNumber()
 	if err := decoder.Decode(&result); err != nil {
-		return QueryResponse{}, fmt.Errorf("failed to decode response: %w", err)
+		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	if len(result.Results) == 0 {
-		return QueryResponse{}, fmt.Errorf("empty response")
+		return nil, fmt.Errorf("empty response")
 	}
 
-	return result.Results[0], nil
+	return result.Results, nil
+}
+
+// SendQuery sends a single query to the remote server and returns the response.
+func (c *Client) SendQuery(ctx context.Context, query Query) (QueryResponse, error) {
+	responses, err := c.SendQueries(ctx, []Query{query})
+	if err != nil {
+		return QueryResponse{}, err
+	}
+
+	return responses[0], nil
 }
 
 // Stats represents the database stats returned by the server.

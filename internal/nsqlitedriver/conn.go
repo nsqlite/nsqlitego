@@ -65,7 +65,7 @@ func (c *Conn) Begin() (driver.Tx, error) {
 
 // BeginTx starts a new transaction with the provided context.
 func (c *Conn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
-	resp, err := c.client.Query(ctx, nsqlitehttp.Query{
+	resp, err := c.client.SendQuery(ctx, nsqlitehttp.Query{
 		Query: "BEGIN;",
 	})
 	if err != nil {
@@ -91,7 +91,7 @@ func (c *Conn) CommitTx(ctx context.Context) error {
 		return nil
 	}
 
-	resp, err := c.client.Query(ctx, nsqlitehttp.Query{
+	resp, err := c.client.SendQuery(ctx, nsqlitehttp.Query{
 		Query: "COMMIT",
 		TxId:  c.txId,
 	})
@@ -114,7 +114,7 @@ func (c *Conn) RollbackTx(ctx context.Context) error {
 		return nil
 	}
 
-	resp, err := c.client.Query(ctx, nsqlitehttp.Query{
+	resp, err := c.client.SendQuery(ctx, nsqlitehttp.Query{
 		Query: "ROLLBACK",
 		TxId:  c.txId,
 	})
@@ -137,7 +137,7 @@ func (c *Conn) setTxId(txId string) {
 
 // Ping verifies that the connection is still alive.
 func (c *Conn) Ping(ctx context.Context) error {
-	return c.client.Ping(ctx)
+	return c.client.SendPing(ctx)
 }
 
 // ResetSession resets the session state used when the connection was used
