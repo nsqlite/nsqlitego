@@ -232,7 +232,6 @@ type Stats struct {
 	StartedAt          string      `json:"startedAt"`
 	Uptime             string      `json:"uptime"`
 	QueuedWrites       int64       `json:"queuedWrites"`
-	QueuedTransactions int64       `json:"queuedTransactions"`
 	QueuedHTTPRequests int64       `json:"queuedHttpRequests"`
 	Totals             StatsTotals `json:"totals"`
 	Stats              []StatsStat `json:"stats"`
