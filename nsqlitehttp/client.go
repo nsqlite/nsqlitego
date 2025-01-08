@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/nsqlite/nsqlitego/nsqlitedsn"
 )
@@ -18,17 +19,63 @@ type Client struct {
 	httpc   *http.Client
 }
 
+// ClientOption is a function that configures a Client.
+type ClientOption func(*Client) error
+
+// WithHTTPTimeout sets the timeout for the default NSQLite HTTP client. Default is 30 seconds.
+func WithHTTPTimeout(timeout time.Duration) ClientOption {
+	return func(c *Client) error {
+		c.httpc.Timeout = timeout
+		return nil
+	}
+}
+
+// WithHTTPTransport sets the transport for the default NSQLite HTTP client. The default is
+// http.DefaultTransport with MaxIdleConns, MaxConnsPerHost, and MaxIdleConnsPerHost set to 100.
+func WithHTTPTransport(transport *http.Transport) ClientOption {
+	return func(c *Client) error {
+		c.httpc.Transport = transport
+		return nil
+	}
+}
+
+// WithHTTPClient entirely replaces the default NSQLite HTTP client with a custom one.
+func WithHTTPClient(httpClient *http.Client) ClientOption {
+	return func(c *Client) error {
+		c.httpc = httpClient
+		return nil
+	}
+}
+
 // NewClient creates a new NSQLite client.
-func NewClient(connStr string) (*Client, error) {
-	cStr, err := nsqlitedsn.NewConnStrFromText(connStr)
+func NewClient(connectionString string, options ...ClientOption) (*Client, error) {
+	connStr, err := nsqlitedsn.NewConnStrFromText(connectionString)
 	if err != nil {
 		return nil, fmt.Errorf("invalid connection string: %v", err)
 	}
 
-	return &Client{
-		connStr: cStr,
-		httpc:   http.DefaultClient,
-	}, nil
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.MaxIdleConns = 100
+	transport.MaxConnsPerHost = 100
+	transport.MaxIdleConnsPerHost = 100
+
+	httpClient := &http.Client{
+		Transport: transport,
+		Timeout:   30 * time.Second,
+	}
+
+	client := &Client{
+		connStr: connStr,
+		httpc:   httpClient,
+	}
+
+	for idx, opt := range options {
+		if err := opt(client); err != nil {
+			return nil, fmt.Errorf("failed to apply option %d: %w", idx+1, err)
+		}
+	}
+
+	return client, nil
 }
 
 // newRequest creates a new HTTP request with the NSQLite URL and authentication
