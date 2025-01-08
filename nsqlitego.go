@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 
 	"github.com/nsqlite/nsqlitego/internal/nsqlitedriver"
+	"github.com/nsqlite/nsqlitego/nsqlitehttp"
 )
 
 // init registers the NSQLite driver for database/sql.
@@ -17,16 +18,8 @@ func init() {
 // Driver implements database/sql/driver.Driver for NSQLite.
 type Driver = nsqlitedriver.Driver
 
-// NewConnectorOptions returns a new set of options to configure a NSQLite
-// connector.
-func NewConnectorOptions() *nsqlitedriver.ConnectorOptions {
-	return nsqlitedriver.NewConnectorOptions()
-}
-
 // NewConnector returns a new NSQLite connector compatible with
 // database/sql.OpenDB
-//
-// It accepts a number of options to configure the connector.
-func NewConnector(opts *nsqlitedriver.ConnectorOptions) driver.Connector {
-	return nsqlitedriver.NewConnector(opts)
+func NewConnector(nsqliteHTTPClient *nsqlitehttp.Client) driver.Connector {
+	return nsqlitedriver.NewConnector(nsqliteHTTPClient)
 }

@@ -3,6 +3,10 @@ package nsqlitedriver
 import (
 	"context"
 	"database/sql/driver"
+	"fmt"
+	"sync"
+
+	"github.com/nsqlite/nsqlitego/nsqlitehttp"
 )
 
 var (
@@ -11,20 +15,48 @@ var (
 )
 
 // Driver implements database/sql/driver.Driver for NSQLite.
-type Driver struct{}
+type Driver struct {
+}
+
+var (
+	httpClient     *nsqlitehttp.Client
+	httpClientErr  error
+	httpClientOnce sync.Once
+)
+
+// getNSQLiteHTTPClient creates a new NSQLite HTTP client singleton.
+func getNSQLiteHTTPClient(connectionString string) (*nsqlitehttp.Client, error) {
+	httpClientOnce.Do(func() {
+		hc, err := nsqlitehttp.NewClient(connectionString)
+		if err != nil {
+			httpClientErr = fmt.Errorf("failed to create NSQLite HTTP client: %v", err)
+			return
+		}
+
+		httpClient = hc
+		httpClientErr = nil
+	})
+
+	return httpClient, httpClientErr
+}
 
 // Open creates a new connection using the provided connection string.
 func (d *Driver) Open(connectionString string) (driver.Conn, error) {
-	opts := NewConnectorOptions()
-	opts.SetConnectionString(connectionString)
+	httpClient, err := getNSQLiteHTTPClient(connectionString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create NSQLite HTTP client: %v", err)
+	}
 
-	conn := NewConnector(opts)
-	return conn.Connect(context.Background())
+	connector := NewConnector(httpClient)
+	return connector.Connect(context.Background())
 }
 
 // OpenConnector creates a new connector using the provided connection string.
 func (d *Driver) OpenConnector(connectionString string) (driver.Connector, error) {
-	opts := NewConnectorOptions()
-	opts.SetConnectionString(connectionString)
-	return NewConnector(opts), nil
+	httpClient, err := getNSQLiteHTTPClient(connectionString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create NSQLite HTTP client: %v", err)
+	}
+
+	return NewConnector(httpClient), nil
 }
