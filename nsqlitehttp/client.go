@@ -289,6 +289,7 @@ type StatsTotals struct {
 	Begins       int64 `json:"begins"`
 	Commits      int64 `json:"commits"`
 	Rollbacks    int64 `json:"rollbacks"`
+	Errors       int64 `json:"errors"`
 	HTTPRequests int64 `json:"httpRequests"`
 }
 
@@ -299,6 +300,7 @@ type StatsStat struct {
 	Begins       int64  `json:"begins"`
 	Commits      int64  `json:"commits"`
 	Rollbacks    int64  `json:"rollbacks"`
+	Errors       int64  `json:"errors"`
 	HTTPRequests int64  `json:"httpRequests"`
 }
 
