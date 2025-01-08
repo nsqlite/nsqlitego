@@ -56,7 +56,6 @@ func NewClient(connectionString string, options ...ClientOption) (*Client, error
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.MaxIdleConns = 100
-	transport.MaxConnsPerHost = 100
 	transport.MaxIdleConnsPerHost = 100
 
 	httpClient := &http.Client{
