@@ -79,10 +79,11 @@ func (s *Stmt) Exec(args []driver.Value) (driver.Result, error) {
 
 // QueryRows represents a set of query results.
 type QueryRows struct {
-	columns []string
-	types   []string
-	values  [][]any
-	rowIdx  int
+	columns   []string
+	types     []string
+	values    [][]any
+	valuesLen int
+	rowIdx    int
 }
 
 // Columns returns the column names.
@@ -97,10 +98,7 @@ func (r *QueryRows) Close() error {
 
 // Next prepares the next row for reading.
 func (r *QueryRows) Next(dest []driver.Value) error {
-	if r.rowIdx < 0 {
-		return fmt.Errorf("invalid row index: %d", r.rowIdx)
-	}
-	if r.rowIdx >= len(r.values) {
+	if r.rowIdx >= r.valuesLen {
 		return io.EOF
 	}
 
@@ -142,9 +140,11 @@ func (s *Stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driv
 		return nil, fmt.Errorf("unexpected response type: %s", resp.Type)
 	}
 	return &QueryRows{
-		columns: resp.Columns,
-		types:   resp.Types,
-		values:  resp.Values,
+		columns:   resp.Columns,
+		types:     resp.Types,
+		values:    resp.Values,
+		valuesLen: len(resp.Values),
+		rowIdx:    0,
 	}, nil
 }
 
