@@ -175,39 +175,32 @@ func (c *Client) GetVersion(ctx context.Context) (string, error) {
 	return string(body), nil
 }
 
-// QueryResponseType represents the type of a query response.
-type QueryResponseType string
-
-const (
-	QueryResponseError    QueryResponseType = "error"
-	QueryResponseOK       QueryResponseType = "ok"
-	QueryResponseBegin    QueryResponseType = "begin"
-	QueryResponseCommit   QueryResponseType = "commit"
-	QueryResponseRollback QueryResponseType = "rollback"
-	QueryResponseWrite    QueryResponseType = "write"
-	QueryResponseRead     QueryResponseType = "read"
-)
-
 // QueryResponse represents the response of a query sent to the remote NSQLite
 // server.
 type QueryResponse struct {
-	Type QueryResponseType `json:"type"`
-	Time float64           `json:"time"`
-
-	// For read queries
-	Columns []string `json:"columns"`
-	Types   []string `json:"types"`
-	Values  [][]any  `json:"values"`
+	// Time is the time taken to execute the query in seconds.
+	Time float64 `json:"time"`
+	// For begin, commit, and rollback
+	TxId string `json:"txId,omitempty"`
+	// For errors
+	Error string `json:"error,omitempty"`
 
 	// For write queries
-	LastInsertID int64 `json:"lastInsertId"`
-	RowsAffected int64 `json:"rowsAffected"`
+	LastInsertID int64 `json:"lastInsertId,omitempty"`
+	RowsAffected int64 `json:"rowsAffected,omitempty"`
 
-	// For begin, commit, and rollback
-	TxId string `json:"txId"`
+	// For read queries
+	Columns []string `json:"columns,omitempty"`
+	Types   []string `json:"types,omitempty"`
+	Rows    [][]any  `json:"rows,omitempty"`
+}
 
-	// For errors
-	Error string `json:"error"`
+// QueryParam represents a named (?NNN, :VVV, @VVV, $VVV) or nameless (?) parameter in a SQL query.
+type QueryParam struct {
+	// Name is the name of the parameter (optional for nameless parameters).
+	Name string `json:"name,omitempty"`
+	// Value is the value of the parameter (required).
+	Value any `json:"value"`
 }
 
 // Query represents the parameters to send a query to the remote server.
@@ -215,7 +208,7 @@ type Query struct {
 	// Query is the SQL query to send (required).
 	Query string `json:"query"`
 	// Params are the parameters to send with a parameterized query (optional).
-	Params []any `json:"params"`
+	Params []QueryParam `json:"params,omitempty"`
 	// TxId is used to send the query in the context of a transaction (optional).
 	TxId string `json:"txId,omitempty"`
 }
