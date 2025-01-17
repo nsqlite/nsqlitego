@@ -4,40 +4,46 @@ import (
 	"database/sql/driver"
 	"reflect"
 	"testing"
+
+	"github.com/nsqlite/nsqlitego/nsqlitehttp"
 )
 
-func TestConvertNamedValueToAnyArray(t *testing.T) {
+func TestConvertNamedValueToQueryParam(t *testing.T) {
 	tests := []struct {
 		name  string
 		input []driver.NamedValue
-		want  []any
+		want  []nsqlitehttp.QueryParam
 	}{
 		{
 			name:  "Empty input",
 			input: []driver.NamedValue{},
-			want:  []any{},
+			want:  []nsqlitehttp.QueryParam{},
 		},
 		{
 			name:  "Single value",
 			input: []driver.NamedValue{{Ordinal: 1, Value: "test"}},
-			want:  []any{"test"},
+			want:  []nsqlitehttp.QueryParam{{Value: "test"}},
 		},
 		{
 			name: "Multiple values",
 			input: []driver.NamedValue{
 				{Ordinal: 1, Value: 42},
-				{Ordinal: 2, Value: "example"},
+				{Name: "exampleName", Value: "exampleValue"},
 				{Ordinal: 3, Value: 3.14},
 			},
-			want: []any{42, "example", 3.14},
+			want: []nsqlitehttp.QueryParam{
+				{Value: 42},
+				{Name: "exampleName", Value: "exampleValue"},
+				{Value: 3.14},
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := convertNamedValueToAnyArray(tt.input)
+			got := convertNamedValueToQueryParam(tt.input)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("convertNamedValueToAnyArray() = %v, want %v", got, tt.want)
+				t.Errorf("convertNamedValueToQueryParam() = %v, want %v", got, tt.want)
 			}
 		})
 	}

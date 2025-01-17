@@ -71,11 +71,11 @@ func (c *Conn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	if resp.Type == nsqlitehttp.QueryResponseError {
+	if resp.Error != "" {
 		return nil, fmt.Errorf("failed to begin transaction: %s", resp.Error)
 	}
-	if resp.Type != nsqlitehttp.QueryResponseBegin {
-		return nil, fmt.Errorf("unexpected response type: %s", resp.Type)
+	if resp.TxId == "" {
+		return nil, fmt.Errorf("transaction ID not returned from server")
 	}
 
 	c.setTxId(resp.TxId)
@@ -98,12 +98,10 @@ func (c *Conn) CommitTx(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
-	if resp.Type == nsqlitehttp.QueryResponseError {
+	if resp.Error != "" {
 		return fmt.Errorf("failed to commit transaction: %s", resp.Error)
 	}
-	if resp.Type != nsqlitehttp.QueryResponseCommit {
-		return fmt.Errorf("unexpected response type: %s", resp.Type)
-	}
+
 	return nil
 }
 
@@ -121,12 +119,10 @@ func (c *Conn) RollbackTx(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to rollback transaction: %w", err)
 	}
-	if resp.Type == nsqlitehttp.QueryResponseError {
+	if resp.Error != "" {
 		return fmt.Errorf("failed to rollback transaction: %s", resp.Error)
 	}
-	if resp.Type != nsqlitehttp.QueryResponseRollback {
-		return fmt.Errorf("unexpected response type: %s", resp.Type)
-	}
+
 	return nil
 }
 

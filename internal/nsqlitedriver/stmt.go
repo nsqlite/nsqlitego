@@ -54,7 +54,7 @@ func (r *ExecResult) RowsAffected() (int64, error) {
 
 // ExecContext executes a query without returning rows (e.g., INSERT, UPDATE).
 func (s *Stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
-	params := convertNamedValueToAnyArray(args)
+	params := convertNamedValueToQueryParam(args)
 	resp, err := s.conn.client.SendQuery(ctx, nsqlitehttp.Query{
 		Query:  s.query,
 		Params: params,
@@ -63,7 +63,7 @@ func (s *Stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (drive
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
-	if resp.Type == nsqlitehttp.QueryResponseError {
+	if resp.Error != "" {
 		return nil, fmt.Errorf("failed to execute query: %s", resp.Error)
 	}
 	return &ExecResult{
@@ -79,11 +79,11 @@ func (s *Stmt) Exec(args []driver.Value) (driver.Result, error) {
 
 // QueryRows represents a set of query results.
 type QueryRows struct {
-	columns   []string
-	types     []string
-	values    [][]any
-	valuesLen int
-	rowIdx    int
+	columns []string
+	types   []string
+	rows    [][]any
+	rowsLen int
+	rowIdx  int
 }
 
 // Columns returns the column names.
@@ -98,11 +98,11 @@ func (r *QueryRows) Close() error {
 
 // Next prepares the next row for reading.
 func (r *QueryRows) Next(dest []driver.Value) error {
-	if r.rowIdx >= r.valuesLen {
+	if r.rowIdx >= r.rowsLen {
 		return io.EOF
 	}
 
-	row := r.values[r.rowIdx]
+	row := r.rows[r.rowIdx]
 	for i, val := range row {
 		dest[i] = val
 	}
@@ -124,7 +124,7 @@ func (r *QueryRows) ColumnTypeDatabaseTypeName(index int) string {
 
 // QueryContext executes a query that returns rows (e.g., SELECT).
 func (s *Stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
-	params := convertNamedValueToAnyArray(args)
+	params := convertNamedValueToQueryParam(args)
 	resp, err := s.conn.client.SendQuery(ctx, nsqlitehttp.Query{
 		Query:  s.query,
 		Params: params,
@@ -133,18 +133,15 @@ func (s *Stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driv
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
-	if resp.Type == nsqlitehttp.QueryResponseError {
+	if resp.Error != "" {
 		return nil, fmt.Errorf("failed to execute query: %s", resp.Error)
 	}
-	if resp.Type != nsqlitehttp.QueryResponseRead {
-		return nil, fmt.Errorf("unexpected response type: %s", resp.Type)
-	}
 	return &QueryRows{
-		columns:   resp.Columns,
-		types:     resp.Types,
-		values:    resp.Values,
-		valuesLen: len(resp.Values),
-		rowIdx:    0,
+		columns: resp.Columns,
+		types:   resp.Types,
+		rows:    resp.Rows,
+		rowsLen: len(resp.Rows),
+		rowIdx:  0,
 	}, nil
 }
 
@@ -153,11 +150,14 @@ func (s *Stmt) Query(args []driver.Value) (driver.Rows, error) {
 	return s.QueryContext(context.Background(), convertValueToNamedValue(args))
 }
 
-// convertNamedValueToAnyArray converts driver.NamedValue arguments to []any.
-func convertNamedValueToAnyArray(args []driver.NamedValue) []any {
-	converted := make([]any, len(args))
+// convertNamedValueToQueryParam converts driver.NamedValue arguments to []nsqlitehttp.QueryParam.
+func convertNamedValueToQueryParam(args []driver.NamedValue) []nsqlitehttp.QueryParam {
+	converted := make([]nsqlitehttp.QueryParam, len(args))
 	for i, arg := range args {
-		converted[i] = arg.Value
+		converted[i] = nsqlitehttp.QueryParam{
+			Name:  arg.Name,
+			Value: arg.Value,
+		}
 	}
 	return converted
 }
