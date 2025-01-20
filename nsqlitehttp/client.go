@@ -130,13 +130,6 @@ func (c *Client) SendPing(ctx context.Context) error {
 		)
 	}
 
-	if strings.ToLower(response.Header.Get("X-Server")) != "nsqlite" {
-		return fmt.Errorf(
-			`health check expected to return NSQLite in X-Server header but got "%s"`,
-			response.Header.Get("X-Server"),
-		)
-	}
-
 	return nil
 }
 
