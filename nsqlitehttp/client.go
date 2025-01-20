@@ -168,24 +168,55 @@ func (c *Client) GetVersion(ctx context.Context) (string, error) {
 	return string(body), nil
 }
 
-// QueryResponse represents the response of a query sent to the remote NSQLite
-// server.
+// QueryResponse represents the response of a query sent to the remote NSQLite server.
 type QueryResponse struct {
+	// Type is the type of the query response (error, begin, commit, rollback, write, read)
+	//
+	//	- Included in all responses.
+	Type string `json:"type"`
+
 	// Time is the time taken to execute the query in seconds.
+	//
+	//	- Included in all responses.
 	Time float64 `json:"time"`
-	// For begin, commit, and rollback
-	TxId string `json:"txId,omitempty"`
-	// For errors
+
+	// Error is the error message if the query failed.
+	//
+	//	- Included in "Type=error" responses.
 	Error string `json:"error,omitempty"`
 
-	// For write queries
+	// TxID is the unique identifier of the new started transaction.
+	//
+	//	- Included in "Type=begin" responses.
+	TxID string `json:"txId,omitempty"`
+
+	// LastInsertID is the last inserted ID of the write query.
+	//
+	//	- Included in "Type=write" responses.
 	LastInsertID int64 `json:"lastInsertId,omitempty"`
+
+	// RowsAffected is the number of rows affected by the write query.
+	//
+	//	- Included in "Type=write" responses.
 	RowsAffected int64 `json:"rowsAffected,omitempty"`
 
-	// For read queries
+	// Columns is the list of columns returned by the read query.
+	//
+	//	- Included in "Type=read" responses.
+	//	- Included in "Type=write" responses if there are rows in the response.
 	Columns []string `json:"columns,omitempty"`
-	Types   []string `json:"types,omitempty"`
-	Rows    [][]any  `json:"rows,omitempty"`
+
+	// Types is the list of types returned by the read query.
+	//
+	//	- Included in "Type=read" responses.
+	//	- Included in "Type=write" responses if there are rows in the response.
+	Types []string `json:"types,omitempty"`
+
+	// Rows is the list of rows returned by the read query.
+	//
+	//	- Included in "Type=read" responses.
+	//	- Included in "Type=write" responses if there are rows in the response.
+	Rows [][]any `json:"rows,omitempty"`
 }
 
 // QueryParam represents a named (?NNN, :VVV, @VVV, $VVV) or nameless (?) parameter in a SQL query.
@@ -261,33 +292,56 @@ func (c *Client) SendQuery(ctx context.Context, query Query) (QueryResponse, err
 
 // Stats represents the database stats returned by the server.
 type Stats struct {
-	StartedAt          string      `json:"startedAt"`
-	Uptime             string      `json:"uptime"`
-	QueuedWrites       int64       `json:"queuedWrites"`
-	QueuedHTTPRequests int64       `json:"queuedHttpRequests"`
-	Totals             StatsTotals `json:"totals"`
-	Stats              []StatsStat `json:"stats"`
+	// StartedAt is the time the server started.
+	StartedAt string `json:"startedAt"`
+	// Uptime is the duration of the server uptime.
+	Uptime string `json:"uptime"`
+	// QueuedBegins is the number of "begin" queries waiting to be executed.
+	QueuedBegins int64 `json:"queuedBegins"`
+	// QueuedWrites is the number of "write" queries waiting to be executed.
+	QueuedWrites int64 `json:"queuedWrites"`
+	// QueuedHTTPRequests is the number of HTTP requests waiting to be executed.
+	QueuedHTTPRequests int64 `json:"queuedHttpRequests"`
+	// Totals is the sum of all stats.
+	Totals StatsTotals `json:"totals"`
+	// Stats is the breakdown of stats per minute.
+	Stats []StatsStat `json:"stats"`
 }
 
 type StatsTotals struct {
-	Reads        int64 `json:"reads"`
-	Writes       int64 `json:"writes"`
-	Begins       int64 `json:"begins"`
-	Commits      int64 `json:"commits"`
-	Rollbacks    int64 `json:"rollbacks"`
-	Errors       int64 `json:"errors"`
+	// Reads is the number of "read" queries executed.
+	Reads int64 `json:"reads"`
+	// Writes is the number of "write" queries executed.
+	Writes int64 `json:"writes"`
+	// Begins is the number of "begin" queries executed.
+	Begins int64 `json:"begins"`
+	// Commits is the number of "commit" queries executed.
+	Commits int64 `json:"commits"`
+	// Rollbacks is the number of "rollback" queries executed.
+	Rollbacks int64 `json:"rollbacks"`
+	// Errors is the number of errors encountered.
+	Errors int64 `json:"errors"`
+	// HTTPRequests is the number of HTTP requests executed.
 	HTTPRequests int64 `json:"httpRequests"`
 }
 
 type StatsStat struct {
-	Minute       string `json:"minute"`
-	Reads        int64  `json:"reads"`
-	Writes       int64  `json:"writes"`
-	Begins       int64  `json:"begins"`
-	Commits      int64  `json:"commits"`
-	Rollbacks    int64  `json:"rollbacks"`
-	Errors       int64  `json:"errors"`
-	HTTPRequests int64  `json:"httpRequests"`
+	// Minute is the minute of the stats.
+	Minute string `json:"minute"`
+	// Reads is the number of "read" queries executed.
+	Reads int64 `json:"reads"`
+	// Writes is the number of "write" queries executed.
+	Writes int64 `json:"writes"`
+	// Begins is the number of "begin" queries executed.
+	Begins int64 `json:"begins"`
+	// Commits is the number of "commit" queries executed.
+	Commits int64 `json:"commits"`
+	// Rollbacks is the number of "rollback" queries executed.
+	Rollbacks int64 `json:"rollbacks"`
+	// Errors is the number of errors encountered.
+	Errors int64 `json:"errors"`
+	// HTTPRequests is the number of HTTP requests executed.
+	HTTPRequests int64 `json:"httpRequests"`
 }
 
 // GetStats returns the database stats from the server.
