@@ -1,5 +1,9 @@
 # nsqlitehttp
 
+<a href="https://pkg.go.dev/github.com/nsqlite/nsqlitego/nsqlitehttp">
+  <img src="https://pkg.go.dev/badge/github.com/nsqlite/nsqlitego/nsqlitehttp" alt="Go Reference"/>
+</a>
+
 An HTTP client package for directly interacting with the **NSQLite database
 engine** over HTTP/HTTPS.
 
@@ -57,7 +61,8 @@ if resp.Type == nsqlitehttp.QueryResponseRead {
 }
 ```
 
-You can also send multiple queries in a single request using `client.SendQueries(ctx, queries)`.
+You can also send multiple queries in a single request using
+`client.SendQueries(ctx, queries)`.
 
 ### Ping / Health Check
 

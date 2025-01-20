@@ -1,5 +1,9 @@
 # nsqlitedsn
 
+<a href="https://pkg.go.dev/github.com/nsqlite/nsqlitego/nsqlitedsn">
+  <img src="https://pkg.go.dev/badge/github.com/nsqlite/nsqlitego/nsqlitedsn" alt="Go Reference"/>
+</a>
+
 A lightweight utility package for parsing and manipulating **NSQLite**
 connection strings.
 
