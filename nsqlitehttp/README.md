@@ -47,8 +47,8 @@ if err != nil {
 
 ```go
 resp, err := client.SendQuery(context.TODO(), nsqlitehttp.Query{
-  Query:  "SELECT id, name FROM users WHERE id > ?",
-  Params: []any{100},
+  Query:  "SELECT id, name FROM users WHERE id > :id",
+  Params: []nsqlitehttp.QueryParam{{Name: "id", Value: 100}},
   // TxId can be optionally set if you are managing transactions at this level
 })
 if err != nil {
@@ -57,7 +57,7 @@ if err != nil {
 
 fmt.Printf("Response Type: %s\n", resp.Type)
 if resp.Type == nsqlitehttp.QueryResponseRead {
-  // Access resp.Columns, resp.Values, etc.
+  // Access resp.Columns, resp.Rows, etc.
 }
 ```
 
@@ -73,3 +73,9 @@ if err := client.SendPing(context.TODO()); err != nil {
   fmt.Println("Server is up and running.")
 }
 ```
+
+### Advanced Usage
+
+Please refer to the
+[nsqlitehttp Go Reference](https://pkg.go.dev/github.com/nsqlite/nsqlitego/nsqlitehttp)
+for more details.
