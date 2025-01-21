@@ -110,14 +110,16 @@ Errors are ignored for brevity, but you should always handle them in your code.
 
 ## Additional Packages
 
-These packages are included in this repository, so no additional installation is required.
+These packages are included in this repository, so no additional installation is
+required.
 
-- **[nsqlitedsn](nsqlitedsn/README.md)** – Provides convenient parsing
-  and manipulation of NSQLite connection strings.
-- **[nsqlitehttp](nsqlitehttp/README.md)** – An alternative way to
-  access the **NSQLite database engine** directly over HTTP, offering more
-  granular control than the `database/sql` layer.
+- **[nsqlitedsn](nsqlitedsn/README.md)** – Provides convenient parsing and
+  manipulation of NSQLite connection strings.
+- **[nsqlitehttp](nsqlitehttp/README.md)** – An alternative way to access the
+  **NSQLite database engine** directly over HTTP, offering more granular control
+  than the `database/sql` layer.
 
 ## License
 
-This project is licensed under the MIT license. See [LICENSE](LICENSE) for details.
+This project is licensed under the MIT license. See [LICENSE](LICENSE) for
+details.
