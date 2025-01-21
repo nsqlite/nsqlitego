@@ -233,8 +233,8 @@ type Query struct {
 	Query string `json:"query"`
 	// Params are the parameters to send with a parameterized query (optional).
 	Params []QueryParam `json:"params,omitempty"`
-	// TxId is used to send the query in the context of a transaction (optional).
-	TxId string `json:"txId,omitempty"`
+	// TxID is used to send the query in the context of a transaction (optional).
+	TxID string `json:"txId,omitempty"`
 }
 
 // SendQueries sends one or more queries to the remote server and returns the responses in same order.
