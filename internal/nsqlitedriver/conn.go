@@ -22,19 +22,20 @@ var (
 type Conn struct {
 	// client is the HTTP client used to communicate with the NSQLite server.
 	client *nsqlitehttp.Client
-	// txId is the ID of the current transaction, if empty no transaction is
+
+	// txID is the ID of the current transaction, if empty no transaction is
 	// active.
 	//
 	// We can store this here because docs say that the connection is not used
-	//concurrently by multiple goroutines and is assumed to be stateful.
+	// concurrently by multiple goroutines and is assumed to be stateful.
 	//
 	// https://pkg.go.dev/database/sql/driver#Conn
 	//
-	// Stmt is where we use txId, and because Stmt is not used concurrently and
-	//is bound to a Conn, we theoretically can store it here.
+	// Stmt is where we use txID, and because Stmt is not used concurrently and
+	// is bound to a Conn, we theoretically can store it here.
 	//
 	// https://pkg.go.dev/database/sql/driver#Stmt
-	txId string
+	txID string
 }
 
 // Prepare creates a prepared statement with the given query.
@@ -74,11 +75,11 @@ func (c *Conn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, e
 	if resp.Error != "" {
 		return nil, fmt.Errorf("failed to begin transaction: %s", resp.Error)
 	}
-	if resp.TxId == "" {
+	if resp.TxID == "" {
 		return nil, fmt.Errorf("transaction ID not returned from server")
 	}
 
-	c.setTxId(resp.TxId)
+	c.setTxId(resp.TxID)
 	return &Tx{
 		conn: c,
 	}, nil
@@ -87,13 +88,13 @@ func (c *Conn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, e
 // CommitTx commits the transaction if any, otherwise does nothing.
 func (c *Conn) CommitTx(ctx context.Context) error {
 	defer c.setTxId("")
-	if c.txId == "" {
+	if c.txID == "" {
 		return nil
 	}
 
 	resp, err := c.client.SendQuery(ctx, nsqlitehttp.Query{
 		Query: "COMMIT",
-		TxId:  c.txId,
+		TxID:  c.txID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
@@ -108,13 +109,13 @@ func (c *Conn) CommitTx(ctx context.Context) error {
 // RollbackTx rolls back the transaction if any, otherwise does nothing.
 func (c *Conn) RollbackTx(ctx context.Context) error {
 	defer c.setTxId("")
-	if c.txId == "" {
+	if c.txID == "" {
 		return nil
 	}
 
 	resp, err := c.client.SendQuery(ctx, nsqlitehttp.Query{
 		Query: "ROLLBACK",
-		TxId:  c.txId,
+		TxID:  c.txID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to rollback transaction: %w", err)
@@ -128,7 +129,7 @@ func (c *Conn) RollbackTx(ctx context.Context) error {
 
 // setTxId sets the transaction ID for the connection.
 func (c *Conn) setTxId(txId string) {
-	c.txId = txId
+	c.txID = txId
 }
 
 // Ping verifies that the connection is still alive.

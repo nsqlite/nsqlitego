@@ -58,7 +58,7 @@ func (s *Stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (drive
 	resp, err := s.conn.client.SendQuery(ctx, nsqlitehttp.Query{
 		Query:  s.query,
 		Params: params,
-		TxId:   s.conn.txId,
+		TxID:   s.conn.txID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
@@ -128,7 +128,7 @@ func (s *Stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driv
 	resp, err := s.conn.client.SendQuery(ctx, nsqlitehttp.Query{
 		Query:  s.query,
 		Params: params,
-		TxId:   s.conn.txId,
+		TxID:   s.conn.txID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
