@@ -222,6 +222,9 @@ type QueryResponse struct {
 // QueryParam represents a named (?NNN, :VVV, @VVV, $VVV) or nameless (?) parameter in a SQL query.
 type QueryParam struct {
 	// Name is the name of the parameter (optional for nameless parameters).
+	//
+	// Is preferred to include the parameter prefix (e.g. ":id" or "@id") in the name but
+	// you can also omit it (e.g. "id").
 	Name string `json:"name,omitempty"`
 	// Value is the value of the parameter (required).
 	Value any `json:"value"`
