@@ -20,6 +20,9 @@ type Driver = nsqlitedriver.Driver
 
 // NewConnector returns a new NSQLite connector compatible with
 // database/sql.OpenDB
+//
+// This is the recommended way to create *sql.DB instances if you
+// want to tune the underlying nsqlitehttp.Client.
 func NewConnector(nsqliteHTTPClient *nsqlitehttp.Client) driver.Connector {
 	return nsqlitedriver.NewConnector(nsqliteHTTPClient)
 }
