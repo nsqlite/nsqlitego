@@ -168,12 +168,24 @@ func (c *Client) GetVersion(ctx context.Context) (string, error) {
 	return string(body), nil
 }
 
+// QueryResponseType is the type of the query response.
+type QueryResponseType string
+
+const (
+	QueryResponseTypeError    QueryResponseType = "error"
+	QueryResponseTypeBegin    QueryResponseType = "begin"
+	QueryResponseTypeCommit   QueryResponseType = "commit"
+	QueryResponseTypeRollback QueryResponseType = "rollback"
+	QueryResponseTypeWrite    QueryResponseType = "write"
+	QueryResponseTypeRead     QueryResponseType = "read"
+)
+
 // QueryResponse represents the response of a query sent to the remote NSQLite server.
 type QueryResponse struct {
 	// Type is the type of the query response (error, begin, commit, rollback, write, read)
 	//
 	//	- Included in all responses.
-	Type string `json:"type"`
+	Type QueryResponseType `json:"type"`
 
 	// Time is the time taken to execute the query in seconds.
 	//
